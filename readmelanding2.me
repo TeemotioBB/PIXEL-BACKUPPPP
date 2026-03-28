@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maya - Acesso Exclusivo</title>
+
+    <meta property="og:title" content="Maya - Acesso Exclusivo">
+    <meta property="og:description" content="Clique para falar comigo no Telegram!">
+    <meta property="og:image" content="https://i.postimg.cc/8zPw7cfH/IMG-3647.png">
+    <link rel="icon" href="https://i.postimg.cc/8zPw7cfH/IMG-3647.png">
+
+    <script>
+    !function(f,b,e,v,n,t,s){
+        if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+        if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];
+        t=b.createElement(e);t.async=!0;t.src=v;
+        s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)
+    }(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '735253462874774');
+    fbq('track', 'PageView');
+    </script>
+    <noscript>
+        <img height="1" width="1" style="display:none"
+        src="https://www.facebook.com/tr?id=735253462874774&ev=PageView&noscript=1"/>
+    </noscript>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #0f0f0f;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+        }
+        .profile-pic {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 4px solid #ff0000;
+            object-fit: cover;
+            object-position: center;
+            margin-bottom: 25px;
+            box-shadow: 0px 0px 30px rgba(255, 0, 0, 0.5);
+        }
+        .btn-telegram {
+            background-color: #0088cc;
+            color: white;
+            border: none;
+            padding: 20px 40px;
+            font-size: 22px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: transform 0.2s, background-color 0.2s;
+            box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.4);
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .btn-telegram:hover {
+            background-color: #00aaff;
+        }
+    </style>
+</head>
+<body>
+
+    <img src="https://i.postimg.cc/8zPw7cfH/IMG-3647.png" alt="Maya" class="profile-pic">
+    
+    <button class="btn-telegram" onclick="irParaTelegram()">CLIQUE PARA ME VER!</button>
+
+    <script>
+        // ====================== Funções de Cookie ======================
+        function getCookie(name) {
+            const value = "; " + document.cookie;
+            const parts = value.split("; " + name + "=");
+            if (parts.length === 2) return parts.pop().split(";").shift();
+            return null;
+        }
+
+        function setCookie(name, value, days = 365) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days*24*60*60*1000));
+            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+        }
+
+        // ====================== Função Principal ======================
+        async function irParaTelegram() {
+            // 1. Tenta pegar o UID que já está na URL
+            const urlParams = new URLSearchParams(window.location.search);
+            let uid = urlParams.get('uid');
+            const fbclid = urlParams.get('fbclid');
+
+            if (!uid) {
+                uid = 'track_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
+            }
+
+            // ====================== Captura _fbp ======================
+            let fbp = getCookie('_fbp');
+            if (!fbp) {
+                fbp = 'fb.1.' + Date.now() + '.' + Math.floor(Math.random() * 1000000000);
+                setCookie('_fbp', fbp);
+            }
+
+            // ====================== Captura _fbc ======================
+            let fbc = getCookie('_fbc');
+            if (!fbc && fbclid) {
+                const ts = Math.floor(Date.now() / 1000);
+                fbc = 'fb.1.' + ts + '.' + fbclid;
+                setCookie('_fbc', fbc);
+            }
+
+            // ====================== Dispara Pixel do Navegador ======================
+            if (typeof fbq !== "undefined") fbq('track', 'Contact');
+
+            // ====================== Chamada Backend (O "Planteio") ======================
+            const serverUrl = "https://pixel-meta-maya-apexvips-production.up.railway.app/apex-tracking";
+            const trackingUrl = `${serverUrl}?uid=${uid}&fbp=${encodeURIComponent(fbp)}&fbc=${encodeURIComponent(fbc || '')}&fbclid=${encodeURIComponent(fbclid || '')}`;
+
+            try {
+                // AWAIT garante que o dado seja salvo no Redis antes de redirecionar
+                await fetch(trackingUrl, { 
+                    method: 'GET', 
+                    mode: 'no-cors',
+                    cache: 'no-cache'
+                });
+                console.log("✅ Tracking plantado com sucesso:", uid);
+            } catch (err) {
+                console.warn("❌ Erro ao sincronizar:", err);
+            }
+
+            // ====================== Redirecionamento Final ======================
+            window.location.href = `https://t.me/Mayaoficial_bot?start=${uid}`;
+        }
+    </script>
+
+    <script>
+        // Scripts de Inicialização da Página
+        function gerarUID() {
+            return 'track_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        let uid = urlParams.get('uid');
+
+        if (!uid) {
+            uid = gerarUID();
+            urlParams.set('uid', uid);
+            window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+        }
+
+        const fbclid = urlParams.get('fbclid') || '';
+        const fbp = document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1] || '';
+        
+        fetch(`https://pixel-meta-maya-apexvips-production.up.railway.app/apex-tracking?uid=${uid}&fbclid=${fbclid}&fbp=${fbp}`)
+            .then(response => console.log('Rastreamento inicial plantado:', uid))
+            .catch(err => console.error('Erro ao rastrear:', err));
+
+        document.querySelectorAll('a[href*="t.me/Mayaoficial_bot"]').forEach(botao => {
+            const urlOriginal = botao.getAttribute('href').split('?')[0];
+            botao.setAttribute('href', `${urlOriginal}?start=${uid}`);
+        });
+    </script>
+
+</body>
+</html>
