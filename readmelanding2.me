@@ -93,82 +93,63 @@
             document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
         }
 
-        // ====================== Função Principal ======================
+        // ====================== Variáveis Globais de Rastreio ======================
+        const urlParams = new URLSearchParams(window.location.search);
+        let uid = urlParams.get('uid');
+        const fbclid = urlParams.get('fbclid') || '';
+
+        // Se não tem UID na URL, cria um e atualiza a URL sem recarregar a página
+        if (!uid) {
+            uid = 'track_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            urlParams.set('uid', uid);
+            window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+        }
+
+        // Captura ou cria _fbp
+        let fbp = getCookie('_fbp');
+        if (!fbp) {
+            fbp = 'fb.1.' + Date.now() + '.' + Math.floor(Math.random() * 1000000000);
+            setCookie('_fbp', fbp);
+        }
+
+        // Captura ou cria _fbc baseado no fbclid
+        let fbc = getCookie('_fbc');
+        if (!fbc && fbclid) {
+            const ts = Math.floor(Date.now() / 1000);
+            fbc = 'fb.1.' + ts + '.' + fbclid;
+            setCookie('_fbc', fbc);
+        }
+
+        const serverUrl = "https://pixel-meta-maya-apexvips-production.up.railway.app/apex-tracking";
+        const trackingUrl = `${serverUrl}?uid=${uid}&fbp=${encodeURIComponent(fbp)}&fbc=${encodeURIComponent(fbc || '')}&fbclid=${encodeURIComponent(fbclid)}`;
+
+        // ====================== TIRO 1: No Carregamento da Página ======================
+        // Isso planta o rastro no Redis assim que a página abre (sem o erro de sintaxe)
+        fetch(trackingUrl, { mode: 'no-cors' })
+            .then(() => console.log('✅ Rastreamento inicial plantado:', uid))
+            .catch(err => console.error('❌ Erro no rastreio inicial:', err));
+
+
+        // ====================== TIRO 2: No Clique do Botão ======================
         async function irParaTelegram() {
-            // 1. Tenta pegar o UID que já está na URL
-            const urlParams = new URLSearchParams(window.location.search);
-            let uid = urlParams.get('uid');
-            const fbclid = urlParams.get('fbclid');
-
-            if (!uid) {
-                uid = 'track_' + Date.now() + '_' + Math.floor(Math.random() * 1000000);
-            }
-
-            // ====================== Captura _fbp ======================
-            let fbp = getCookie('_fbp');
-            if (!fbp) {
-                fbp = 'fb.1.' + Date.now() + '.' + Math.floor(Math.random() * 1000000000);
-                setCookie('_fbp', fbp);
-            }
-
-            // ====================== Captura _fbc ======================
-            let fbc = getCookie('_fbc');
-            if (!fbc && fbclid) {
-                const ts = Math.floor(Date.now() / 1000);
-                fbc = 'fb.1.' + ts + '.' + fbclid;
-                setCookie('_fbc', fbc);
-            }
-
-            // ====================== Dispara Pixel do Navegador ======================
+            // Dispara Pixel do Navegador
             if (typeof fbq !== "undefined") fbq('track', 'Contact');
 
-            // ====================== Chamada Backend (O "Planteio") ======================
-            const serverUrl = "https://pixel-meta-maya-apexvips-production.up.railway.app/apex-tracking";
-            const trackingUrl = `${serverUrl}?uid=${uid}&fbp=${encodeURIComponent(fbp)}&fbc=${encodeURIComponent(fbc || '')}&fbclid=${encodeURIComponent(fbclid || '')}`;
-
+            // Chamada Backend final para garantir
             try {
-                // AWAIT garante que o dado seja salvo no Redis antes de redirecionar
                 await fetch(trackingUrl, { 
                     method: 'GET', 
                     mode: 'no-cors',
                     cache: 'no-cache'
                 });
-                console.log("✅ Tracking plantado com sucesso:", uid);
+                console.log("✅ Tracking final garantido:", uid);
             } catch (err) {
-                console.warn("❌ Erro ao sincronizar:", err);
+                console.warn("⚠️ Aviso no sync final:", err);
             }
 
-            // ====================== Redirecionamento Final ======================
+            // Redirecionamento
             window.location.href = `https://t.me/Mayaoficial_bot?start=${uid}`;
         }
-    </script>
-
-    <script>
-        // Scripts de Inicialização da Página
-        function gerarUID() {
-            return 'track_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
-        }
-
-        const urlParams = new URLSearchParams(window.location.search);
-        let uid = urlParams.get('uid');
-
-        if (!uid) {
-            uid = gerarUID();
-            urlParams.set('uid', uid);
-            window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
-        }
-
-        const fbclid = urlParams.get('fbclid') || '';
-        const fbp = document.cookie.split('; ').find(row => row.startsWith('_fbp='))?.split('=')[1] || '';
-        
-        fetch(`https://pixel-meta-maya-apexvips-production.up.railway.app/apex-tracking?uid=${uid}&fbclid=${fbclid}&fbp=${fbp}`)
-            .then(response => console.log('Rastreamento inicial plantado:', uid))
-            .catch(err => console.error('Erro ao rastrear:', err));
-
-        document.querySelectorAll('a[href*="t.me/Mayaoficial_bot"]').forEach(botao => {
-            const urlOriginal = botao.getAttribute('href').split('?')[0];
-            botao.setAttribute('href', `${urlOriginal}?start=${uid}`);
-        });
     </script>
 
 </body>
