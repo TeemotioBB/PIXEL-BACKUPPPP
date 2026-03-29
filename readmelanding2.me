@@ -81,7 +81,7 @@
     <button class="btn-telegram" onclick="irParaTelegram()">CLIQUE PARA ME VER!</button>
 
     <script>
-        // Funções de Cookie
+        // ====================== COOKIES ======================
         function getCookie(name) {
             const value = "; " + document.cookie;
             const parts = value.split("; " + name + "=");
@@ -91,14 +91,92 @@
 
         function setCookie(name, value, days = 365) {
             const expires = new Date();
-            expires.setTime(expires.getTime() + (days*24*60*60*1000));
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
             document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
         }
 
-        // Variáveis de Rastreio
+        // ====================== VARIÁVEIS DE RASTREIO ======================
         const urlParams = new URLSearchParams(window.location.search);
         let uid = urlParams.get('uid');
         const fbclid = urlParams.get('fbclid') || '';
+
+        if (!uid) {
+            uid = 'track_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+            urlParams.set('uid', uid);
+            window.history.replaceState({}, '', `${window.location.pathname}?${urlParams.toString()}`);
+        }
+
+        let fbp = getCookie('_fbp');
+        if (!fbp) {
+            fbp = 'fb.1.' + Date.now() + '.' + Math.floor(Math.random() * 1000000000);
+            setCookie('_fbp', fbp);
+        }
+
+        let fbc = getCookie('_fbc');
+        if (!fbc && fbclid) {
+            const ts = Math.floor(Date.now() / 1000);
+            fbc = 'fb.1.' + ts + '.' + fbclid;
+            setCookie('_fbc', fbc);
+        }
+
+        const serverUrl = "https://pixel-meta-maya-apexvips-production.up.railway.app/apex-tracking";
+        const trackingUrl = `${serverUrl}?uid=${uid}&fbp=${encodeURIComponent(fbp)}&fbc=${encodeURIComponent(fbc || '')}&fbclid=${encodeURIComponent(fbclid)}`;
+
+        // ====================== TIRO 1: Tracking ao carregar a página ======================
+        // ✅ FIX — Retry com até 3 tentativas no TIRO 1
+        async function dispararTiro1() {
+            for (let i = 0; i < 3; i++) {
+                try {
+                    await fetch(trackingUrl, { mode: 'no-cors', cache: 'no-cache' });
+                    console.log(`✅ [TIRO 1] Tracking inicial enviado (tentativa ${i + 1}) | UID: ${uid}`);
+                    return;
+                } catch (err) {
+                    console.warn(`⚠️ [TIRO 1] Tentativa ${i + 1} falhou:`, err);
+                    await new Promise(res => setTimeout(res, 800));
+                }
+            }
+            console.error('❌ [TIRO 1] Falhou em todas as tentativas');
+        }
+        dispararTiro1();
+
+        // ====================== TIRO 2: Clique do botão ======================
+        // ✅ FIX — Retry + delay aumentado para 2500ms
+        async function irParaTelegram() {
+            if (typeof fbq !== "undefined") fbq('track', 'Contact');
+
+            console.log('📤 [TIRO 2] Enviando tracking final | UID:', uid);
+
+            let enviado = false;
+            for (let i = 0; i < 3; i++) {
+                try {
+                    await fetch(trackingUrl, {
+                        method: 'GET',
+                        mode: 'no-cors',
+                        cache: 'no-cache'
+                    });
+                    enviado = true;
+                    console.log(`✅ [TIRO 2] Tracking enviado com sucesso (tentativa ${i + 1})`);
+                    break;
+                } catch (err) {
+                    console.warn(`⚠️ [TIRO 2] Tentativa ${i + 1} falhou:`, err);
+                    await new Promise(res => setTimeout(res, 500));
+                }
+            }
+
+            if (!enviado) {
+                console.error('❌ [TIRO 2] Falhou em todas as tentativas — redirecionando mesmo assim');
+            }
+
+            // ✅ FIX — Delay aumentado de 1000ms para 2500ms para garantir gravação no Redis
+            await new Promise(resolve => setTimeout(resolve, 2500));
+            console.log('⏱️ Delay finalizado, redirecionando para Telegram...');
+
+            window.location.href = `https://t.me/Mayaoficial_bot?start=${uid}`;
+        }
+    </script>
+
+</body>
+</html>        const fbclid = urlParams.get('fbclid') || '';
 
         if (!uid) {
             uid = 'track_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
